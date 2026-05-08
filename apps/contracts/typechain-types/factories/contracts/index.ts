@@ -2,4 +2,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as mocks from "./mocks";
+export { PantheonRegistry__factory } from "./PantheonRegistry__factory";
 export { PantheonVault__factory } from "./PantheonVault__factory";
+export { TraceAnchor__factory } from "./TraceAnchor__factory";

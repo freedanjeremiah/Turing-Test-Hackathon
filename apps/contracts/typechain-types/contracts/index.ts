@@ -3,4 +3,6 @@
 /* eslint-disable */
 import type * as mocks from "./mocks";
 export type { mocks };
+export type { PantheonRegistry } from "./PantheonRegistry";
 export type { PantheonVault } from "./PantheonVault";
+export type { TraceAnchor } from "./TraceAnchor";

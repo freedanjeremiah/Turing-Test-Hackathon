@@ -54,9 +54,17 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ERC20Mock__factory>;
     getContractFactory(
+      name: "PantheonRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PantheonRegistry__factory>;
+    getContractFactory(
       name: "PantheonVault",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.PantheonVault__factory>;
+    getContractFactory(
+      name: "TraceAnchor",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TraceAnchor__factory>;
 
     getContractAt(
       name: "IERC1155Errors",
@@ -109,10 +117,20 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.ERC20Mock>;
     getContractAt(
+      name: "PantheonRegistry",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PantheonRegistry>;
+    getContractAt(
       name: "PantheonVault",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.PantheonVault>;
+    getContractAt(
+      name: "TraceAnchor",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TraceAnchor>;
 
     deployContract(
       name: "IERC1155Errors",
@@ -155,9 +173,17 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ERC20Mock>;
     deployContract(
+      name: "PantheonRegistry",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PantheonRegistry>;
+    deployContract(
       name: "PantheonVault",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PantheonVault>;
+    deployContract(
+      name: "TraceAnchor",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TraceAnchor>;
 
     deployContract(
       name: "IERC1155Errors",
@@ -210,10 +236,20 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ERC20Mock>;
     deployContract(
+      name: "PantheonRegistry",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PantheonRegistry>;
+    deployContract(
       name: "PantheonVault",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.PantheonVault>;
+    deployContract(
+      name: "TraceAnchor",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TraceAnchor>;
 
     // default types
     getContractFactory(
