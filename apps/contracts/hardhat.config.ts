@@ -8,6 +8,7 @@ const config: HardhatUserConfig = {
   networks: {
     Mantle: {
       url: process.env.MANTLE_RPC_URL ?? "",
+      chainId: 5003,
       accounts: process.env.PRIVATE_KEY_ALLOCATOR
         ? [process.env.PRIVATE_KEY_ALLOCATOR]
         : [],
