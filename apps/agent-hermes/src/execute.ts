@@ -13,7 +13,7 @@
 import { ethers } from "ethers";
 import { AgentProposal } from "@pantheon/shared";
 import * as dotenv from "dotenv";
-import { placeHlOrder } from "./hl.js";
+import { placeHlOrder } from "@pantheon/hl-client";
 dotenv.config({ path: "../../.env" });
 
 const ENABLE_REAL_TRADES = process.env.ENABLE_REAL_TRADES === "true";

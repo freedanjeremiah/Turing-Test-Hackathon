@@ -3,7 +3,7 @@ import { reason } from "./reason.js";
 import { anchorTrace } from "./anchor.js";
 import { submitProposal, reportSettlement } from "./propose.js";
 import { executeHermesTrade } from "./execute.js";
-import { closeHlPosition } from "./hl.js";
+import { closeHlPosition } from "@pantheon/hl-client";
 import { AGENT_CYCLE_MS, HERMES_HOLD_MS } from "@pantheon/shared";
 
 async function cycle(): Promise<void> {
