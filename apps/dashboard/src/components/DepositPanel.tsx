@@ -7,7 +7,7 @@ import {
 } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import { parseUnits, formatUnits } from "viem";
-import { PantheonVaultABI as PantheonVaultABIRaw } from "@pantheon/shared/abis";
+import PantheonVaultABIRaw from "@pantheon/shared/abis/PantheonVault.json";
 import { wagmiConfig } from "../lib/wagmi";
 import { WalletConnect } from "./WalletConnect";
 

@@ -1,7 +1,7 @@
 "use client";
 import { useConnect, useSwitchChain } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { useOnboardingStep, type OnboardingStep } from "../hooks/useOnboardingStep.js";
+import { useOnboardingStep, type OnboardingStep } from "../hooks/useOnboardingStep";
 
 const MANTLE_SEPOLIA_CHAIN_ID = 5003;
 const FAUCET_URL = process.env.NEXT_PUBLIC_FAUCET_URL ?? "https://faucet.sepolia.mantle.xyz";

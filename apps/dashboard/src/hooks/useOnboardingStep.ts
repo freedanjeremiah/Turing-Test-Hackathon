@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useChainId, useReadContract } from "wagmi";
-import { PantheonVaultABI as PantheonVaultABIRaw } from "@pantheon/shared/abis";
+import PantheonVaultABIRaw from "@pantheon/shared/abis/PantheonVault.json";
 
 const PantheonVaultABI = PantheonVaultABIRaw as readonly any[];
 const ERC20_ABI = [
