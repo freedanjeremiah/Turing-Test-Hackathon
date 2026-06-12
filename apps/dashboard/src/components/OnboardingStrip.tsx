@@ -1,10 +1,28 @@
 "use client";
-import { useConnect, useSwitchChain } from "wagmi";
+import { useConnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { useOnboardingStep, type OnboardingStep } from "../hooks/useOnboardingStep";
 
 const MANTLE_SEPOLIA_CHAIN_ID = 5003;
+const MANTLE_CHAIN_PARAMS = {
+  chainId: "0x138B" as const, // 5003 in hex
+  chainName: "Mantle Sepolia",
+  nativeCurrency: { name: "MNT", symbol: "MNT", decimals: 18 },
+  rpcUrls: ["https://rpc.sepolia.mantle.xyz"],
+  blockExplorerUrls: [] as string[],
+};
 const FAUCET_URL = process.env.NEXT_PUBLIC_FAUCET_URL ?? "https://faucet.sepolia.mantle.xyz";
+
+async function addAndSwitchToMantle() {
+  const provider = (window as any).ethereum;
+  if (!provider) return;
+  try {
+    await provider.request({ method: "wallet_addEthereumChain", params: [MANTLE_CHAIN_PARAMS] });
+  } catch {
+    // already added — just switch
+    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: MANTLE_CHAIN_PARAMS.chainId }] });
+  }
+}
 
 const STEPS: Array<{ id: OnboardingStep; label: string }> = [
   { id: 1, label: "Connect wallet" },
@@ -20,7 +38,6 @@ export function OnboardingStrip({
 }) {
   const { step, dismissed, dismiss, address } = useOnboardingStep();
   const { connect } = useConnect();
-  const { switchChain } = useSwitchChain();
 
   if (dismissed || step >= 4) return null;
 
@@ -35,7 +52,7 @@ export function OnboardingStrip({
         );
       case 1:
         return (
-          <button onClick={() => switchChain({ chainId: MANTLE_SEPOLIA_CHAIN_ID })}
+          <button onClick={addAndSwitchToMantle}
             className="bg-blue-600 hover:bg-blue-500 text-white text-sm rounded px-4 py-2 font-semibold">
             Add / switch to Mantle Sepolia testnet
           </button>
