@@ -1,12 +1,14 @@
 /**
- * Demeter venue execution: deposit USDC into USYC (or Aave) and later redeem
- * to compute realized yield delta.
+ * Demeter venue execution: deposit USDC into the real on-chain MantleYieldVault
+ * (ERC-4626) on Mantle Sepolia and later redeem to compute realized yield.
  *
- * USYC Teller is a real ERC-4626-style vault on Mantle Sepolia:
- *   deposit(assets, receiver) → shares
- *   redeem(shares, receiver, owner) → assets
+ * MantleYieldVault is a real ERC-4626 vault whose share price appreciates from an
+ * owner-funded reward reserve streamed per second:
+ *   deposit(assets, receiver) -> shares
+ *   redeem(shares, receiver, owner) -> assets
  *
- * Aave on Mantle Sepolia is not yet deployed — supply() works when AAVE_POOL_ADDRESS is set.
+ * No external lending protocol exists on Mantle Sepolia, so this self-deployed vault
+ * IS the real yield venue. Everything is real on-chain state — no simulation.
  */
 import { ethers } from "ethers";
 import { AgentProposal } from "@pantheon/shared";
@@ -15,24 +17,19 @@ dotenv.config({ path: "../../.env" });
 
 const ENABLE_REAL_TRADES = process.env.ENABLE_REAL_TRADES === "true";
 
-const USDC_ADDRESS        = process.env.USDC_ADDRESS ?? "";
-const USYC_ADDRESS        = process.env.USYC_ADDRESS ?? "";
-const USYC_TELLER_ADDRESS = process.env.USYC_TELLER_ADDRESS ?? "0x9fdF14c5B14173D74C08Af27AebFf39240dC105A";
-const AAVE_POOL           = process.env.AAVE_POOL_ADDRESS ?? "";
+const USDC_ADDRESS = process.env.USDC_ADDRESS ?? "";
+const YIELD_VAULT_ADDRESS = process.env.YIELD_VAULT_ADDRESS ?? "";
 
 const ERC20_ABI = [
   "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
 ] as const;
 
-const USYC_TELLER_ABI = [
+const VAULT_ABI = [
   "function deposit(uint256 assets, address receiver) returns (uint256 shares)",
   "function redeem(uint256 shares, address receiver, address owner) returns (uint256 assets)",
-] as const;
-
-const AAVE_POOL_ABI = [
-  "function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode)",
-  "function withdraw(address asset, uint256 amount, address to) returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
 ] as const;
 
 export type DepositResult =
@@ -43,92 +40,61 @@ export type RedeemResult =
   | { ok: true; receivedUsd6: bigint }
   | { ok: false; reason: string };
 
-export async function depositToVenue(proposal: AgentProposal, allocatedUsd: number): Promise<DepositResult> {
-  const venue = proposal.venue;
+function wallet(): ethers.Wallet {
+  const provider = new ethers.JsonRpcProvider(process.env.MANTLE_RPC_URL!);
+  return new ethers.Wallet(process.env.PRIVATE_KEY_DEMETER!, provider);
+}
+
+export async function depositToVenue(_proposal: AgentProposal, allocatedUsd: number): Promise<DepositResult> {
   const amountUsdc6 = BigInt(Math.floor(allocatedUsd * 1_000_000));
 
   if (!ENABLE_REAL_TRADES) {
-    console.log(`[demeter] deposit skipped (ENABLE_REAL_TRADES=false): would deposit ${allocatedUsd} USDC into ${venue}`);
+    console.log(`[demeter] deposit skipped (ENABLE_REAL_TRADES=false): would deposit ${allocatedUsd} USDC into MantleYieldVault`);
     return { ok: false, reason: "real_trades_disabled" };
   }
-
-  const provider = new ethers.JsonRpcProvider(process.env.MANTLE_RPC_URL!);
-  const wallet   = new ethers.Wallet(process.env.PRIVATE_KEY_DEMETER!, provider);
-  const usdc     = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, wallet);
-
-  if (venue === "usyc") {
-    if (!USYC_ADDRESS) return { ok: false, reason: "usyc_address_unset" };
-    try {
-      const usyc = new ethers.Contract(USYC_ADDRESS, ERC20_ABI, wallet);
-      const sharesBefore = BigInt(await usyc.balanceOf(wallet.address));
-      await (await usdc.approve(USYC_TELLER_ADDRESS, amountUsdc6)).wait();
-      const teller = new ethers.Contract(USYC_TELLER_ADDRESS, USYC_TELLER_ABI, wallet);
-      const tx = await teller.deposit(amountUsdc6, wallet.address);
-      const receipt = await tx.wait();
-      const sharesAfter = BigInt(await usyc.balanceOf(wallet.address));
-      const sharesHeld = sharesAfter - sharesBefore;
-      console.log(`[demeter] USYC deposit ok (tx: ${receipt?.hash}); sharesHeld delta = ${sharesHeld}`);
-      return { ok: true, venue: "usyc", sharesHeld, depositedUsd6: amountUsdc6 };
-    } catch (err) {
-      console.warn(`[demeter] USYC Teller deposit failed (${(err as Error).message?.slice(0, 80)}); using simulated yield`);
-      return { ok: true, venue: "usyc_sim", sharesHeld: amountUsdc6, depositedUsd6: amountUsdc6 };
-    }
+  if (!USDC_ADDRESS || !YIELD_VAULT_ADDRESS) {
+    return { ok: false, reason: "vault_address_unset" };
   }
 
-  if (venue === "aave") {
-    if (!AAVE_POOL) return { ok: false, reason: "aave_pool_unset" };
-    await (await usdc.approve(AAVE_POOL, amountUsdc6)).wait();
-    const aave = new ethers.Contract(AAVE_POOL, AAVE_POOL_ABI, wallet);
-    const tx = await aave.supply(USDC_ADDRESS, amountUsdc6, wallet.address, 0);
-    const receipt = await tx.wait();
-    console.log(`[demeter] Aave supply ok (tx: ${receipt?.hash})`);
-    return { ok: true, venue: "aave", sharesHeld: amountUsdc6, depositedUsd6: amountUsdc6 };
+  const w = wallet();
+  const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, w);
+  const vault = new ethers.Contract(YIELD_VAULT_ADDRESS, VAULT_ABI, w);
+
+  const sharesBefore = BigInt(await vault.balanceOf(w.address));
+
+  const allowance: bigint = await usdc.allowance(w.address, YIELD_VAULT_ADDRESS);
+  if (allowance < amountUsdc6) {
+    await (await usdc.approve(YIELD_VAULT_ADDRESS, ethers.MaxUint256)).wait();
   }
 
-  return { ok: false, reason: `unknown_venue:${venue}` };
+  const tx = await vault.deposit(amountUsdc6, w.address);
+  const receipt = await tx.wait();
+  const sharesAfter = BigInt(await vault.balanceOf(w.address));
+  const sharesHeld = sharesAfter - sharesBefore;
+  console.log(`[demeter] MantleYieldVault deposit ok (tx: ${receipt?.hash}); shares delta = ${sharesHeld}`);
+  return { ok: true, venue: "mantle_yield", sharesHeld, depositedUsd6: amountUsdc6 };
 }
 
-export async function redeemFromVenue(venue: string, sharesHeld: bigint, depositedUsd6: bigint): Promise<RedeemResult> {
+export async function redeemFromVenue(_venue: string, sharesHeld: bigint, depositedUsd6: bigint): Promise<RedeemResult> {
   if (!ENABLE_REAL_TRADES) {
     return { ok: false, reason: "real_trades_disabled" };
   }
   if (sharesHeld <= 0n) {
     return { ok: false, reason: "no_shares_to_redeem" };
   }
-
-  const provider = new ethers.JsonRpcProvider(process.env.MANTLE_RPC_URL!);
-  const wallet   = new ethers.Wallet(process.env.PRIVATE_KEY_DEMETER!, provider);
-  const usdc     = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, wallet);
-
-  if (venue === "usyc") {
-    const balBefore = BigInt(await usdc.balanceOf(wallet.address));
-    const teller = new ethers.Contract(USYC_TELLER_ADDRESS, USYC_TELLER_ABI, wallet);
-    const tx = await teller.redeem(sharesHeld, wallet.address, wallet.address);
-    const receipt = await tx.wait();
-    const balAfter = BigInt(await usdc.balanceOf(wallet.address));
-    const receivedUsd6 = balAfter - balBefore;
-    console.log(`[demeter] USYC redeem ok (tx: ${receipt?.hash}); received ${receivedUsd6} usdc6 vs deposited ${depositedUsd6}`);
-    return { ok: true, receivedUsd6 };
+  if (!USDC_ADDRESS || !YIELD_VAULT_ADDRESS) {
+    return { ok: false, reason: "vault_address_unset" };
   }
 
-  if (venue === "usyc_sim") {
-    // Simulated yield: 5.2% APY over the hold window (~15 min).
-    const holdSeconds = Number(process.env.DEMETER_HOLD_MS ?? 900_000) / 1000;
-    const yieldUsd6 = BigInt(Math.floor(Number(depositedUsd6) * 0.052 * holdSeconds / (365 * 24 * 3600)));
-    const receivedUsd6 = depositedUsd6 + yieldUsd6;
-    console.log(`[demeter] USYC SIMULATED redeem; yield=${yieldUsd6} over ${holdSeconds}s`);
-    return { ok: true, receivedUsd6 };
-  }
+  const w = wallet();
+  const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, w);
+  const vault = new ethers.Contract(YIELD_VAULT_ADDRESS, VAULT_ABI, w);
 
-  if (venue === "aave") {
-    if (!AAVE_POOL) return { ok: false, reason: "aave_pool_unset" };
-    const balBefore = BigInt(await usdc.balanceOf(wallet.address));
-    const aave = new ethers.Contract(AAVE_POOL, AAVE_POOL_ABI, wallet);
-    const tx = await aave.withdraw(USDC_ADDRESS, sharesHeld, wallet.address);
-    const receipt = await tx.wait();
-    const balAfter = BigInt(await usdc.balanceOf(wallet.address));
-    return { ok: true, receivedUsd6: balAfter - balBefore };
-  }
-
-  return { ok: false, reason: `unknown_venue:${venue}` };
+  const balBefore = BigInt(await usdc.balanceOf(w.address));
+  const tx = await vault.redeem(sharesHeld, w.address, w.address);
+  const receipt = await tx.wait();
+  const balAfter = BigInt(await usdc.balanceOf(w.address));
+  const receivedUsd6 = balAfter - balBefore;
+  console.log(`[demeter] MantleYieldVault redeem ok (tx: ${receipt?.hash}); received ${receivedUsd6} usdc6 vs deposited ${depositedUsd6}`);
+  return { ok: true, receivedUsd6 };
 }

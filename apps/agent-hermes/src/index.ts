@@ -2,26 +2,14 @@ import { fetchFundingRates } from "./data.js";
 import { reason } from "./reason.js";
 import { anchorTrace } from "./anchor.js";
 import { submitProposal, reportSettlement, postStuck } from "./propose.js";
-import { executeHermesTrade, HermesPosition } from "./execute.js";
-import { closeHlPosition } from "@pantheon/hl-client";
+import { executeHermesTrade, PerpPosition } from "./execute.js";
+import { closePerpPosition } from "@pantheon/mantle-perp-client";
 import { AGENT_CYCLE_MS, HERMES_HOLD_MS } from "@pantheon/shared";
 
-async function holdAndClose(position: HermesPosition, allocatedUsd: number): Promise<number | null> {
+async function holdAndClose(position: PerpPosition, _allocatedUsd: number): Promise<number | null> {
   await new Promise(r => setTimeout(r, HERMES_HOLD_MS));
-  const close = await closeHlPosition(
-    process.env.PRIVATE_KEY_HERMES!,
-    position.coin,
-    position.sizeInCoins,
-    position.szDecimals,
-    position.isBuy,
-    "hermes",
-  ).catch(err => {
-    console.warn(`[hermes] HL close failed:`, err);
-    return null;
-  });
-  if (!close) return null;
-  const pct = (close.exitPrice - position.fillPrice) / position.fillPrice;
-  return pct * allocatedUsd * (position.isBuy ? 1 : -1);
+  // closePerpPosition returns realized PnL in USD straight from the on-chain event.
+  return closePerpPosition(process.env.PRIVATE_KEY_HERMES!, position, "hermes");
 }
 
 async function cycle(): Promise<void> {
@@ -67,10 +55,10 @@ async function cycle(): Promise<void> {
 
     const pnlUsd = await holdAndClose(exec.position, allocatedUsd);
     if (pnlUsd === null) {
-      await postStuck("hermes", "hl_close_failed");
+      await postStuck("hermes", "perp_close_failed");
       return;
     }
-    console.log(`[hermes] real HL PnL: $${pnlUsd.toFixed(4)}`);
+    console.log(`[hermes] real Mantle perp PnL: $${pnlUsd.toFixed(4)}`);
 
     await reportSettlement("hermes", pnlUsd);
     console.log(`[hermes] settlement reported: $${pnlUsd.toFixed(4)}`);

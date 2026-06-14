@@ -1,0 +1,19 @@
+{
+  "name": "@pantheon/mantle-perp-client",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@pantheon/shared": "workspace:*",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

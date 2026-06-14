@@ -1,11 +1,15 @@
 /**
- * Deploys PantheonVault, PantheonRegistry, and TraceAnchor (fresh, current ABI) to
- * Mantle Sepolia testnet, registers the three agents, and writes the resulting addresses
- * into .env and apps/dashboard/.env.local automatically.
+ * Deploys the full Pantheon stack to Mantle Sepolia: PantheonVault, PantheonRegistry,
+ * TraceAnchor, plus the real on-chain venues MantleYieldVault (ERC-4626) and
+ * MantleOraclePerp (Pyth-settled). Registers agents, seeds the venues, and writes
+ * the resulting addresses into .env and apps/dashboard/.env.local automatically.
  *
  * Run: cd apps/contracts && pnpm hardhat run ../../scripts/deploy.ts --network mantleSepolia
  */
 import { ethers } from "hardhat";
+
+// Real Pyth oracle on Mantle Sepolia (verified live). Override via PYTH_ADDRESS.
+const PYTH_ADDRESS = process.env.PYTH_ADDRESS ?? "0x98046Bd286715D3B0BC227Dd7a956b83D8978603";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -83,7 +87,39 @@ async function main() {
     console.log(`  Registered ${name}: ${addr}`);
   }
 
-  // 5. Write addresses into .env and apps/dashboard/.env.local
+  // 5. MantleYieldVault (real ERC-4626) — demeter's yield venue
+  const YieldVault = await ethers.getContractFactory("MantleYieldVault");
+  const yieldVault = await YieldVault.deploy(usdc, deployer.address);
+  await yieldVault.waitForDeployment();
+  const yieldVaultAddress = await yieldVault.getAddress();
+  console.log("MantleYieldVault deployed:", yieldVaultAddress);
+
+  // 6. MantleOraclePerp (real Pyth-settled perp) — hermes/pythia's perp venue
+  const Perp = await ethers.getContractFactory("MantleOraclePerp");
+  const perp = await Perp.deploy(usdc, PYTH_ADDRESS, deployer.address);
+  await perp.waitForDeployment();
+  const perpAddress = await perp.getAddress();
+  console.log("MantleOraclePerp deployed:", perpAddress, "(Pyth:", PYTH_ADDRESS + ")");
+
+  // 7. Seed the venues with real USDC (mint to deployer when using mock USDC, then fund).
+  //    Yield reserve: 5,000 USDC streamed at ~5.2% APY on a 100k base ≈ 0.000165 USDC/sec.
+  //    Perp pool: 20,000 USDC to pay winning positions.
+  try {
+    const usdcToken = await ethers.getContractAt("ERC20Mock", usdc);
+    const reserve = ethers.parseUnits("5000", 6);
+    const pool = ethers.parseUnits("20000", 6);
+    await (await usdcToken.mint(deployer.address, reserve + pool)).wait();
+    await (await usdcToken.approve(yieldVaultAddress, reserve)).wait();
+    await (await yieldVault.fundRewards(reserve)).wait();
+    await (await yieldVault.setRewardRate(ethers.parseUnits("0.0002", 6))).wait(); // ~0.0002 USDC/sec
+    await (await usdcToken.approve(perpAddress, pool)).wait();
+    await (await perp.fundPool(pool)).wait();
+    console.log("Seeded YieldVault reserve (5000) + Perp pool (20000) USDC");
+  } catch (e) {
+    console.warn("Venue seeding skipped (non-mock USDC or mint not permitted):", (e as Error).message?.slice(0, 80));
+  }
+
+  // 8. Write addresses into .env and apps/dashboard/.env.local
   const rootEnv = join(REPO_ROOT, ".env");
   upsertEnv(rootEnv, {
     VAULT_ADDRESS: vaultAddress,
@@ -92,6 +128,9 @@ async function main() {
     ANCHOR_ADDRESS: anchorAddress,
     USDC_ADDRESS: usdc,
     NEXT_PUBLIC_USDC_ADDRESS: usdc,
+    YIELD_VAULT_ADDRESS: yieldVaultAddress,
+    PERP_ADDRESS: perpAddress,
+    PYTH_ADDRESS: PYTH_ADDRESS,
   });
   console.log(`\nWrote addresses to ${rootEnv}`);
 

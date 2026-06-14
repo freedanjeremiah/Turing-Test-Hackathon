@@ -14,7 +14,7 @@ const ROOT = join(__dirname, "..");
 const ARTIFACTS = join(ROOT, "apps/contracts/artifacts/contracts");
 const SHARED_ABIS = join(ROOT, "packages/shared/src/abis");
 
-const CONTRACTS = ["PantheonVault", "PantheonRegistry", "TraceAnchor"] as const;
+const CONTRACTS = ["PantheonVault", "PantheonRegistry", "TraceAnchor", "MantleYieldVault", "MantleOraclePerp"] as const;
 
 let failed = false;
 for (const name of CONTRACTS) {

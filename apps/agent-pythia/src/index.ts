@@ -2,26 +2,14 @@ import { fetchNewsHeadlines, StaleHeadlinesError } from "./data.js";
 import { reason } from "./reason.js";
 import { anchorTrace } from "./anchor.js";
 import { submitProposal, reportSettlement, postStuck } from "./propose.js";
-import { executePythiaTrade, PythiaPosition } from "./execute.js";
-import { closeHlPosition } from "@pantheon/hl-client";
+import { executePythiaTrade, PerpPosition } from "./execute.js";
+import { closePerpPosition } from "@pantheon/mantle-perp-client";
 import { AGENT_CYCLE_MS, PYTHIA_HOLD_MS } from "@pantheon/shared";
 
-async function holdAndClose(position: PythiaPosition, allocatedUsd: number): Promise<number | null> {
+async function holdAndClose(position: PerpPosition, _allocatedUsd: number): Promise<number | null> {
   await new Promise(r => setTimeout(r, PYTHIA_HOLD_MS));
-  const close = await closeHlPosition(
-    process.env.PRIVATE_KEY_PYTHIA!,
-    position.coin,
-    position.sizeInCoins,
-    position.szDecimals,
-    position.isBuy,
-    "pythia",
-  ).catch(err => {
-    console.warn(`[pythia] HL close failed:`, err);
-    return null;
-  });
-  if (!close) return null;
-  const pct = (close.exitPrice - position.fillPrice) / position.fillPrice;
-  return pct * allocatedUsd * (position.isBuy ? 1 : -1);
+  // closePerpPosition returns realized PnL in USD straight from the on-chain event.
+  return closePerpPosition(process.env.PRIVATE_KEY_PYTHIA!, position, "pythia");
 }
 
 async function cycle(): Promise<void> {
@@ -79,10 +67,10 @@ async function cycle(): Promise<void> {
 
     const pnlUsd = await holdAndClose(exec.position, allocatedUsd);
     if (pnlUsd === null) {
-      await postStuck("pythia", "hl_close_failed");
+      await postStuck("pythia", "perp_close_failed");
       return;
     }
-    console.log(`[pythia] real HL PnL: $${pnlUsd.toFixed(4)}`);
+    console.log(`[pythia] real Mantle perp PnL: $${pnlUsd.toFixed(4)}`);
 
     await reportSettlement("pythia", pnlUsd);
     console.log(`[pythia] settlement reported: $${pnlUsd.toFixed(4)}`);
