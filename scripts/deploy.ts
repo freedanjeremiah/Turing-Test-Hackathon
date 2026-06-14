@@ -26,7 +26,14 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with:", deployer.address);
 
-  const usdc = process.env.USDC_ADDRESS ?? "0x3600000000000000000000000000000000000000";
+  let usdc = process.env.USDC_ADDRESS;
+  if (!usdc || /^0x0+$/i.test(usdc)) {
+    const Mock = await ethers.getContractFactory("ERC20Mock");
+    const mock = await Mock.deploy("USD Coin", "USDC", 6);
+    await mock.waitForDeployment();
+    usdc = await mock.getAddress();
+    console.log("Mock USDC deployed:", usdc);
+  }
   const allocator = process.env.PRIVATE_KEY_ALLOCATOR
     ? new ethers.Wallet(process.env.PRIVATE_KEY_ALLOCATOR).address
     : deployer.address;
@@ -83,11 +90,13 @@ async function main() {
     NEXT_PUBLIC_VAULT_ADDRESS: vaultAddress,
     REGISTRY_ADDRESS: registryAddress,
     ANCHOR_ADDRESS: anchorAddress,
+    USDC_ADDRESS: usdc,
+    NEXT_PUBLIC_USDC_ADDRESS: usdc,
   });
   console.log(`\nWrote addresses to ${rootEnv}`);
 
   const dashEnv = join(REPO_ROOT, "apps/dashboard/.env.local");
-  upsertEnv(dashEnv, { NEXT_PUBLIC_VAULT_ADDRESS: vaultAddress });
+  upsertEnv(dashEnv, { NEXT_PUBLIC_VAULT_ADDRESS: vaultAddress, NEXT_PUBLIC_USDC_ADDRESS: usdc });
   console.log(`Wrote NEXT_PUBLIC_VAULT_ADDRESS to ${dashEnv}`);
 
   console.log("\nDeploy complete. Next: pnpm tsx scripts/preflight.ts");

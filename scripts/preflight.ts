@@ -1,5 +1,5 @@
 /**
- * Pre-flight validation for the real Mantle-testnet path. Run this BEFORE starting
+ * Pre-flight validation for the real Mantle Sepolia path. Run this BEFORE starting
  * the agents/allocator — it catches every misconfiguration that left agents
  * "stuck on cycle 1" during soak testing:
  *   - missing env
@@ -8,7 +8,7 @@
  *   - agents not registered in the registry (anchor() + scoring fail)
  *   - vault.allocator() not matching PRIVATE_KEY_ALLOCATOR (allocate() reverts)
  *   - agents haven't approve()d the vault (settle() reverts)
- *   - no Mantle gas in the agent/allocator wallets
+ *   - no MNT gas in the agent/allocator wallets
  *
  * Usage: pnpm tsx scripts/preflight.ts
  * Exits non-zero if any hard check fails.
@@ -105,7 +105,7 @@ async function main() {
 
   // 5. Allocator gas
   const allocGas = await provider.getBalance(allocatorWallet.address);
-  check("Allocator gas (Mantle USDC)", allocGas > 0n ? "PASS" : "FAIL",
+  check("Allocator gas (MNT)", allocGas > 0n ? "PASS" : "FAIL",
     `${ethers.formatEther(allocGas)} (raw ${allocGas})${allocGas > 0n ? "" : " — fund allocator for gas"}`);
 
   // 6. Per-agent: address↔key match, registration, approval, gas, sidelined
@@ -143,8 +143,8 @@ async function main() {
 
     // gas
     const gas = await provider.getBalance(derived);
-    check(`${agent}: Mantle gas`, gas > 0n ? "PASS" : "FAIL",
-      `${ethers.formatEther(gas)} (raw ${gas})${gas > 0n ? "" : " — fund for gas"}`);
+    check(`${agent}: MNT gas`, gas > 0n ? "PASS" : "FAIL",
+      `${ethers.formatEther(gas)} (raw ${gas})${gas > 0n ? "" : " — fund for MNT gas"}`);
 
     // sidelined?
     try {
