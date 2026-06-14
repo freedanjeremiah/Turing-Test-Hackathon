@@ -41,17 +41,19 @@ contracts deployed on Mantle**, and the agents transact against them every cycle
 
 ## Deployed contracts (Mantle Sepolia)
 
-> **Redeploy pending — operator step.** Fill these in after running the deploy below.
+> **Deployed live on Mantle Sepolia (chain 5003).** Explorer: https://sepolia.mantlescan.xyz
 
 | Contract | Address |
 |---|---|
-| PantheonVault | `0x… (TBD on deploy)` |
-| PantheonRegistry | `0x… (TBD on deploy)` |
-| TraceAnchor | `0x… (TBD on deploy)` |
-| MantleYieldVault (ERC-4626) | `0x… (TBD on deploy)` |
-| MantleOraclePerp | `0x… (TBD on deploy)` |
-| Test USDC (ERC20) | `0x… (TBD on deploy)` |
+| PantheonVault | `0xE2c66EA9d756C689585Bc77f28E5007b319db364` |
+| PantheonRegistry | `0xAC74e30A629d37Af1238D5a7d1655769537B5913` |
+| TraceAnchor | `0xb382F2a51D604a9a88988051862e616Fb2513EB0` |
+| MantleYieldVault (ERC-4626) | `0x9aDa9F8381379799594A340F3E01A4139E3c9062` |
+| MantleOraclePerp | `0x82E92B8F167BAeBffCEe36b03025Ab4D726618e4` |
+| Test USDC (ERC20) | `0x463099cdEA69AeBf85370a25A66288098C913c07` |
 | Pyth oracle (existing, live) | `0x98046Bd286715D3B0BC227Dd7a956b83D8978603` |
+
+Agent wallets (registered): hermes `0xb7484463aFa52fEbdEDA7175c70362e884beBc99` · pythia `0xAF34F92a0Ee45e64919FD226Eb09AA9c195ED33d` · demeter `0x76F948747134405d77759Dc0479dD5Ba599D25D8`
 
 ## Which wallets to fund, and from where
 
