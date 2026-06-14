@@ -1,105 +1,84 @@
 /**
- * Creates Circle developer-controlled wallets for each agent + allocator.
- * Run once, then paste the printed addresses into .env.
- *
- * Prerequisites:
- *   CIRCLE_API_KEY       — from Circle Developer Console
- *   CIRCLE_ENTITY_SECRET — 32-byte hex entity secret (from Circle Console)
+ * Generates fresh local EVM EOAs for the allocator + three agents and writes their
+ * private keys + addresses into .env. Mantle agents sign directly with ethers using
+ * PRIVATE_KEY_* — no Circle / server-side signing.
  *
  * Usage: pnpm tsx scripts/create-wallets.ts
+ *
+ * After running: fund each printed address with test MNT from
+ * https://faucet.sepolia.mantle.xyz (gas is paid in MNT on Mantle).
+ *
+ * Re-running is safe: existing PRIVATE_KEY and AGENT_ADDRESS lines are NOT overwritten
+ * unless they are blank/placeholder, so you won't clobber funded wallets. Use --force
+ * to regenerate all.
  */
-import crypto from "crypto";
+import { ethers } from "ethers";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
-const BASE = "https://api.circle.com/v1/w3s";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ENV_PATH = join(__dirname, "..", ".env");
+const FORCE = process.argv.includes("--force");
 
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env var: ${name}`);
+type Slot = { keyVar: string; addrVar?: string; label: string };
+const SLOTS: Slot[] = [
+  { keyVar: "PRIVATE_KEY_ALLOCATOR", label: "allocator (also deployer)" },
+  { keyVar: "PRIVATE_KEY_HERMES", addrVar: "AGENT_ADDRESS_HERMES", label: "hermes" },
+  { keyVar: "PRIVATE_KEY_PYTHIA", addrVar: "AGENT_ADDRESS_PYTHIA", label: "pythia" },
+  { keyVar: "PRIVATE_KEY_DEMETER", addrVar: "AGENT_ADDRESS_DEMETER", label: "demeter" },
+];
+
+function readEnv(): string[] {
+  return existsSync(ENV_PATH) ? readFileSync(ENV_PATH, "utf8").replace(/\n$/, "").split("\n") : [];
+}
+function getVal(lines: string[], key: string): string | null {
+  const line = lines.find(l => l.replace(/^#\s*/, "").startsWith(`${key}=`));
+  if (!line) return null;
+  const v = line.slice(line.indexOf("=") + 1).trim();
   return v;
 }
-
-async function circlePost(path: string, body: unknown, apiKey: string): Promise<unknown> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Circle API ${path} failed ${res.status}: ${text}`);
-  }
-  return res.json();
+function isPlaceholder(v: string | null): boolean {
+  return !v || v === "" || v.includes("...") || v.startsWith("0x...");
+}
+function upsert(lines: string[], key: string, value: string): void {
+  const idx = lines.findIndex(l => l.replace(/^#\s*/, "").startsWith(`${key}=`));
+  if (idx >= 0) lines[idx] = `${key}=${value}`;
+  else lines.push(`${key}=${value}`);
 }
 
-async function main() {
-  const apiKey = requireEnv("CIRCLE_API_KEY");
-  const entitySecret = requireEnv("CIRCLE_ENTITY_SECRET");
+function main() {
+  const lines = readEnv();
+  const created: { label: string; address: string }[] = [];
+  const kept: { label: string; address: string }[] = [];
 
-  // Derive entity secret ciphertext (required for developer-controlled wallets)
-  // Circle requires the entity secret encrypted with their public key.
-  // For the hackathon, use the Circle SDK's helper or construct manually.
-  // Here we call the /config/entity/publicKey endpoint to get the public key.
-  const pkRes = await fetch(`${BASE}/config/entity/publicKey`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  if (!pkRes.ok) throw new Error(`Failed to fetch entity public key: ${pkRes.status}`);
-  const { data: pkData } = (await pkRes.json()) as { data: { publicKey: string } };
-
-  // Encrypt entity secret with Circle's RSA-OAEP public key
-  const secretBytes = Buffer.from(entitySecret.replace(/^0x/, ""), "hex");
-  const ciphertext = crypto.publicEncrypt(
-    { key: pkData.publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" },
-    secretBytes
-  );
-  const entitySecretCiphertext = ciphertext.toString("base64");
-
-  // Create a wallet set for Pantheon
-  const idempotencyKey = crypto.randomUUID();
-  const wsRes = (await circlePost(
-    "/developer/walletSets",
-    { idempotencyKey, name: "Pantheon Hackathon", entitySecretCiphertext },
-    apiKey
-  )) as { data: { walletSet: { id: string } } };
-  const walletSetId = wsRes.data.walletSet.id;
-  console.log(`Created wallet set: ${walletSetId}`);
-  console.log(`Add to .env: CIRCLE_WALLET_SET_ID=${walletSetId}\n`);
-
-  const agents = ["hermes", "pythia", "demeter", "allocator"] as const;
-  const addresses: Record<string, string> = {};
-
-  for (const agent of agents) {
-    const wRes = (await circlePost(
-      "/developer/wallets",
-      {
-        idempotencyKey: crypto.randomUUID(),
-        accountType: "EOA",
-        blockchains: ["EVM"],
-        count: 1,
-        walletSetId,
-        entitySecretCiphertext,
-        metadata: [{ name: `pantheon-${agent}`, refId: agent }],
-      },
-      apiKey
-    )) as { data: { wallets: { id: string; address: string }[] } };
-    const wallet = wRes.data.wallets[0];
-    addresses[agent] = wallet.address;
-    console.log(`${agent}: ${wallet.address}  (walletId: ${wallet.id})`);
+  for (const slot of SLOTS) {
+    const existing = getVal(lines, slot.keyVar);
+    if (!FORCE && !isPlaceholder(existing)) {
+      const addr = new ethers.Wallet(existing!).address;
+      if (slot.addrVar) upsert(lines, slot.addrVar, addr);
+      kept.push({ label: slot.label, address: addr });
+      continue;
+    }
+    const w = ethers.Wallet.createRandom();
+    upsert(lines, slot.keyVar, w.privateKey);
+    if (slot.addrVar) upsert(lines, slot.addrVar, w.address);
+    created.push({ label: slot.label, address: w.address });
   }
 
-  console.log("\n--- Add these to your .env ---");
-  console.log(`AGENT_ADDRESS_HERMES=${addresses["hermes"]}`);
-  console.log(`AGENT_ADDRESS_PYTHIA=${addresses["pythia"]}`);
-  console.log(`AGENT_ADDRESS_DEMETER=${addresses["demeter"]}`);
-  console.log(`PRIVATE_KEY_ALLOCATOR=<export from Circle Console for allocator wallet>`);
-  console.log("--- End ---");
-  console.log("\nNote: Circle developer-controlled wallets sign server-side.");
-  console.log("Export private keys from the Circle Console if needed for direct ethers.js signing.");
+  writeFileSync(ENV_PATH, lines.join("\n") + "\n");
+
+  console.log(`\nWrote keys/addresses to ${ENV_PATH}\n`);
+  if (created.length) {
+    console.log("Created:");
+    for (const c of created) console.log(`  ${c.label.padEnd(24)} ${c.address}`);
+  }
+  if (kept.length) {
+    console.log("Kept (already set — use --force to regenerate):");
+    for (const k of kept) console.log(`  ${k.label.padEnd(24)} ${k.address}`);
+  }
+  console.log("\nFund EACH address with test MNT (gas): https://faucet.sepolia.mantle.xyz");
+  console.log("Then: deploy → approve-vault → mint-usdc → preflight.");
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+main();
