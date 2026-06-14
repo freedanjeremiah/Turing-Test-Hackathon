@@ -4,9 +4,14 @@ Guidance for Claude Code when working in this repository. The README is the user
 
 ## What this is
 
-Pantheon is a multi-agent on-chain hedge fund on Mantle Sepolia testnet. Three off-chain AI agents (`hermes`, `pythia`, `demeter`) submit trade proposals every 60s. An off-chain allocator scores them and calls `PantheonVault.allocate()` on Mantle Sepolia. PnL is reported back via `PantheonVault.settle()`. Reasoning traces are pinned to IPFS and hash-anchored via `TraceAnchor`.
+Pantheon is a multi-agent on-chain hedge fund on Mantle Sepolia testnet. Three off-chain AI agents (`hermes`, `pythia`, `demeter`) submit trade proposals each cycle. An off-chain allocator scores them and calls `PantheonVault.allocate()` on Mantle Sepolia. PnL is reported back via `PantheonVault.settle()`. Reasoning traces are pinned to IPFS and hash-anchored via `TraceAnchor`.
 
-Built for the Agora hackathon (deadline **2026-05-25** — today is 2026-05-24). Hackathon-grade code: optimize for shipping, not robustness.
+**Real on-chain venues (Mantle Sepolia has no third-party DEX/lending/perp deployed, so we ship our own):**
+- `MantleOraclePerp` — hermes/pythia open/close perps settled against the **real Pyth oracle** (`0x98046Bd2…`, live on Sepolia). Prices are pulled from Pyth Hermes and posted on-chain per trade. Client: `packages/mantle-perp-client`. This **replaces** the old Hyperliquid simulated fills (traps #5/#6).
+- `MantleYieldVault` (ERC-4626) — demeter's real yield venue; share price appreciates from an owner-funded reward reserve streamed per second. This **replaces** the old USYC sim (trap #7).
+- Both are deployed + seeded by `scripts/deploy.ts`; gated by `ENABLE_REAL_TRADES`. Contract tests use MockPyth; production uses real Pyth. OZ pinned to 5.0.2 (paris-safe, avoids the `mcopy` opcode) so bytecode runs on Mantle.
+
+Built for the Mantle "Turing Test" Hackathon 2026 (deadline **2026-06-15**). Hackathon-grade code: optimize for shipping, not robustness.
 
 PRD: `2026-05-23-pantheon-prd.md` (single source of truth for scope).
 
@@ -14,16 +19,18 @@ PRD: `2026-05-23-pantheon-prd.md` (single source of truth for scope).
 
 ```
 apps/
-  contracts/      Hardhat. PantheonVault, PantheonRegistry, TraceAnchor + ERC20Mock.
+  contracts/      Hardhat. PantheonVault, PantheonRegistry, TraceAnchor, MantleYieldVault, MantleOraclePerp + ERC20Mock.
   allocator/      Node + Express. Scores proposals, calls vault.allocate/settle.
-  agent-hermes/   Funding-rate arb, Hyperliquid perps via CCTP V2.
-  agent-pythia/   News-reactive trader, Twitter + RSS data, HL perps via CCTP V2.
-  agent-demeter/  Stablecoin yield rotator, USYC Teller on Mantle.
+  agent-hermes/   Funding-rate arb; opens real perps on MantleOraclePerp (Pyth-settled).
+  agent-pythia/   News-reactive trader, Twitter + RSS data; real perps on MantleOraclePerp.
+  agent-demeter/  Stablecoin yield rotator; deposits the real MantleYieldVault (ERC-4626).
   indexer/        ethers event listener + node:sqlite + Express REST + ws.
   dashboard/      Next.js 14 App Router + wagmi v2.
 packages/
-  shared/         Types + ABIs (see "Known traps" below).
-scripts/          create-wallets, deploy, register-agents, set-allocator, e2e.
+  shared/             Types + ABIs (see "Known traps" below).
+  hl-client/          Legacy Hyperliquid client (no longer used by agents; kept for reference).
+  mantle-perp-client/ Pyth Hermes pull + MantleOraclePerp open/close (used by hermes/pythia).
+scripts/          create-wallets, deploy, mint-usdc, approve-vault, preflight, e2e.
 ```
 
 `pnpm` workspaces + Turborepo. `pnpm dev` runs everything; each app also has its own `pnpm dev`.
