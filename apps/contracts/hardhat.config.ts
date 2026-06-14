@@ -15,5 +15,22 @@ const config: HardhatUserConfig = {
       accounts: process.env.PRIVATE_KEY_ALLOCATOR ? [process.env.PRIVATE_KEY_ALLOCATOR] : [],
     },
   },
+  // Verify contracts on Mantlescan so wallets/explorers recognize them (removes the
+  // "unverified contract" warning MetaMask shows on approvals). Needs a free
+  // Mantlescan API key in MANTLESCAN_API_KEY. Run:
+  //   pnpm hardhat verify --network mantleSepolia <address> <constructorArgs...>
+  etherscan: {
+    apiKey: { mantleSepolia: process.env.MANTLESCAN_API_KEY ?? "" },
+    customChains: [
+      {
+        network: "mantleSepolia",
+        chainId: 5003,
+        urls: {
+          apiURL: "https://api-sepolia.mantlescan.xyz/api",
+          browserURL: "https://sepolia.mantlescan.xyz",
+        },
+      },
+    ],
+  },
 };
 export default config;
