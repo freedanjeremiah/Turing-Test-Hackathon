@@ -3,17 +3,16 @@ import "@nomicfoundation/hardhat-toolbox";
 import * as dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
-// Mantle uses USDC as native gas. Transactions cost USDC directly — no ETH needed.
-// Circle Paymaster endpoint (PAYMASTER_URL) can sponsor gas; omit for direct USDC gas.
+// Mantle Sepolia is an OP-stack L2. Gas is paid in MNT (18 dec), not USDC.
+// Mantle uses FIFO sequencing — priority fee can be 0; the L1-data-fee component
+// means deploys may need a high gas limit to avoid estimation under-shoot.
 const config: HardhatUserConfig = {
   solidity: "0.8.24",
   networks: {
-    Mantle: {
-      url: process.env.MANTLE_RPC_URL ?? "",
+    mantleSepolia: {
+      url: process.env.MANTLE_RPC_URL ?? "https://rpc.sepolia.mantle.xyz",
       chainId: 5003,
-      accounts: process.env.PRIVATE_KEY_ALLOCATOR
-        ? [process.env.PRIVATE_KEY_ALLOCATOR]
-        : [],
+      accounts: process.env.PRIVATE_KEY_ALLOCATOR ? [process.env.PRIVATE_KEY_ALLOCATOR] : [],
     },
   },
 };
