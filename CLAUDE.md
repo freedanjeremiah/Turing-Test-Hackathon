@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository. The README is the user
 
 ## What this is
 
-Pantheon is a multi-agent on-chain hedge fund on Mantle Sepolia testnet. Three off-chain AI agents (`hermes`, `pythia`, `demeter`) submit trade proposals every 60s. An off-chain allocator scores them and calls `PantheonVault.allocate()` on Mantle. PnL is reported back via `PantheonVault.settle()`. Reasoning traces are pinned to IPFS and hash-anchored via `TraceAnchor`.
+Pantheon is a multi-agent on-chain hedge fund on Mantle Sepolia testnet. Three off-chain AI agents (`hermes`, `pythia`, `demeter`) submit trade proposals every 60s. An off-chain allocator scores them and calls `PantheonVault.allocate()` on Mantle Sepolia. PnL is reported back via `PantheonVault.settle()`. Reasoning traces are pinned to IPFS and hash-anchored via `TraceAnchor`.
 
 Built for the Agora hackathon (deadline **2026-05-25** — today is 2026-05-24). Hackathon-grade code: optimize for shipping, not robustness.
 
@@ -30,7 +30,7 @@ scripts/          create-wallets, deploy, register-agents, set-allocator, e2e.
 
 ## Architecture invariants
 
-- **Chain**: Mantle Sepolia testnet, chain ID **5003**. USDC (`0x36...0000`) is the **native gas token** — there is no Paymaster and no separate gas token. Treat `chain.nativeCurrency` as USDC in any new wagmi/viem config.
+- **Chain**: Mantle Sepolia, chain ID **5003**. The native gas token is **MNT (18 decimals)** — every wallet (deployer + agents) needs test MNT for gas. USDC is an ordinary **6-decimal ERC20** (deployed as a mock via `scripts/deploy.ts`; there is no canonical USDC on Mantle Sepolia). Treat `chain.nativeCurrency` as MNT in any wagmi/viem config; the dashboard uses viem's built-in `mantleSepoliaTestnet`.
 - **Vault is the real USDC custody point** (Phase 1). `PantheonVault.allocate(agent, amount, cycleId)` does `usdc.safeTransfer(agent, delta)` after a `liquidReserve` precondition check; the agent's wallet really holds the allocated USDC. `settle(agent, pnl)` does `usdc.safeTransferFrom(agent, vault, allocated + pnl)` — so on a gain the agent returns `allocated + |pnl|`, on a loss the agent returns `allocated − |loss|`, vault net delta is always `pnl`. The agent must `approve(vault, MAX)` once after registration — use `scripts/approve-vault.ts <agentId>`.
 - **Daily loss cap (−5%)** is enforced **on-chain** in `PantheonVault.settle()` (search for `LOSS_CAP_BPS`). After a breach, `agentSidelined[agent] = true` and any subsequent `allocate()` reverts. The off-chain allocator does not need to enforce this — the on-chain flag is the source of truth.
 - **Pause coverage**: `deposit`, `withdraw`, `allocate`, and `settle` all carry the `notPaused` modifier. `forceSettle(agent, pnl)` is an admin-only escape that bypasses the pause for wind-down (same accounting as settle, no daily reset, no sideline).
@@ -82,15 +82,15 @@ scripts/          create-wallets, deploy, register-agents, set-allocator, e2e.
 - New env var `NEXT_PUBLIC_FAUCET_URL` (operator: replace with the canonical Mantle faucet URL when available; defaults to docs link).
 - Deleted: `TracesFeed.tsx` (superseded by ReasoningTheater + TraceCard), `AgentLeaderboard.tsx` (superseded by CompactLeaderboard).
 
-## Deployed contracts (Mantle Sepolia testnet)
+## Deployed contracts (Mantle Sepolia)
 
 | Contract | Address |
 |---|---|
-| PantheonVault | `0x54120530B0A114bbA1cC2Fe30B93f4ac4b6eb8Fe` |
-| PantheonRegistry | `0x48fCCa251c5FFF968d39bF9a527045becbe7d761` |
-| TraceAnchor | `0x87704aB48dE82aBa4FaF3ba81E1edbD37935195c` |
+| PantheonVault | redeploy pending |
+| PantheonRegistry | redeploy pending |
+| TraceAnchor | redeploy pending |
 
-Don't redeploy unless you must — depositors are on these addresses.
+Redeploy to Mantle Sepolia is pending — run `scripts/deploy.ts --network mantleSepolia` and paste addresses here.
 
 ## Common tasks
 

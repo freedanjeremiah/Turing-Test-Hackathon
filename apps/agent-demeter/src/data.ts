@@ -94,7 +94,7 @@ export async function fetchYieldRates(): Promise<YieldData[]> {
   const arcRpc = process.env.MANTLE_RPC_URL;
   const usycAddress = process.env.USYC_ADDRESS;
   const aaveAddress = process.env.AAVE_POOL_ADDRESS;
-  const usdcAddress = process.env.USDC_ADDRESS ?? "0x3600000000000000000000000000000000000000";
+  const usdcAddress = process.env.USDC_ADDRESS ?? "";
 
   const hasTbd = (v?: string) => !v || v.includes("<") || v === "0x...";
 

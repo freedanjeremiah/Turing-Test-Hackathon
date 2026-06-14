@@ -8,7 +8,7 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
 const GATEWAY_WALLET = process.env.GATEWAY_WALLET_ADDRESS ?? "0x0077777d7EBA4688BDeF3E311b846F25870A19B9";
-const USDC_ADDRESS  = process.env.USDC_ADDRESS ?? "0x3600000000000000000000000000000000000000";
+const USDC_ADDRESS  = process.env.USDC_ADDRESS ?? "";
 const MANTLE_CHAIN_ID  = Number(process.env.MANTLE_CHAIN_ID ?? "5003");
 
 // EIP-3009 domain + type hashes

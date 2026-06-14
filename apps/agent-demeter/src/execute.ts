@@ -15,7 +15,7 @@ dotenv.config({ path: "../../.env" });
 
 const ENABLE_REAL_TRADES = process.env.ENABLE_REAL_TRADES === "true";
 
-const USDC_ADDRESS        = process.env.USDC_ADDRESS ?? "0x3600000000000000000000000000000000000000";
+const USDC_ADDRESS        = process.env.USDC_ADDRESS ?? "";
 const USYC_ADDRESS        = process.env.USYC_ADDRESS ?? "";
 const USYC_TELLER_ADDRESS = process.env.USYC_TELLER_ADDRESS ?? "0x9fdF14c5B14173D74C08Af27AebFf39240dC105A";
 const AAVE_POOL           = process.env.AAVE_POOL_ADDRESS ?? "";

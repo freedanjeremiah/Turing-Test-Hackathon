@@ -7,7 +7,7 @@
 *Three AI agents compete for real on-chain capital. Every decision is published with its full reasoning. Risk is enforced by the contract, not by trust.*
 
 [![Live demo](https://img.shields.io/badge/demo-live-2ea44f?style=flat-square)](https://pantheon-mantle.vercel.app)
-[![Chain](https://img.shields.io/badge/chain-Mantle%20testnet%20·%205003-4f7cff?style=flat-square)](https://sepolia.mantlescan.xyz)
+[![Chain](https://img.shields.io/badge/chain-Mantle%20Sepolia%20·%205003-4f7cff?style=flat-square)](https://sepolia.mantlescan.xyz)
 [![Settlement](https://img.shields.io/badge/settles%20in-USDC-2775ca?style=flat-square)](https://www.circle.com/usdc)
 [![License](https://img.shields.io/badge/license-MIT-555?style=flat-square)](#license)
 
@@ -40,17 +40,13 @@ The point isn't "an AI that makes money." It's an agent-run fund you can **audit
 | **Indexer (WebSocket)** | wss://pantheon.philotheephilix.in/api |
 
 **Network:** Mantle Sepolia testnet · chain ID `5003` · RPC `https://rpc.sepolia.mantle.xyz` · explorer [sepolia.mantlescan.xyz](https://sepolia.mantlescan.xyz)
-USDC is the **native gas token** on Mantle, so the vault custodies USDC directly with no paymaster. Get testnet USDC from the [Circle faucet](https://faucet.circle.com/).
+Gas on Mantle Sepolia is paid in **MNT (18 dec)** — fund every wallet with test MNT from the [Mantle Sepolia faucet](https://faucet.sepolia.mantle.xyz). USDC is an ordinary 6-decimal ERC20 (deployed as a mock by `scripts/deploy.ts`).
 
 ---
 
-## Deployed contracts (Mantle Sepolia testnet)
+## Deployed contracts (Mantle Sepolia)
 
-| Contract | Address | Explorer |
-|---|---|---|
-| `PantheonVault` | `0x54120530B0A114bbA1cC2Fe30B93f4ac4b6eb8Fe` | [view ↗](https://sepolia.mantlescan.xyz/address/0x54120530B0A114bbA1cC2Fe30B93f4ac4b6eb8Fe) |
-| `PantheonRegistry` | `0x48fCCa251c5FFF968d39bF9a527045becbe7d761` | [view ↗](https://sepolia.mantlescan.xyz/address/0x48fCCa251c5FFF968d39bF9a527045becbe7d761) |
-| `TraceAnchor` | `0x87704aB48dE82aBa4FaF3ba81E1edbD37935195c` | [view ↗](https://sepolia.mantlescan.xyz/address/0x87704aB48dE82aBa4FaF3ba81E1edbD37935195c) |
+**Redeploy to Mantle Sepolia pending** — run `pnpm hardhat run ../../scripts/deploy.ts --network mantleSepolia` and paste addresses here.
 
 **Agent wallets**
 
@@ -64,7 +60,7 @@ USDC is the **native gas token** on Mantle, so the vault custodies USDC directly
 
 | Asset | Address |
 |---|---|
-| USDC (native gas token) | [`0x3600000000000000000000000000000000000000`](https://sepolia.mantlescan.xyz/address/0x3600000000000000000000000000000000000000) |
+| USDC (6-decimal ERC20 mock) | _redeploy pending — set after `scripts/deploy.ts`_ |
 | USYC | [`0xe9185F0c5F296Ed1797AaE4238D26CCaBEadb86C`](https://sepolia.mantlescan.xyz/address/0xe9185F0c5F296Ed1797AaE4238D26CCaBEadb86C) |
 | USYC Teller | [`0x9fdF14c5B14173D74C08Af27AebFf39240dC105A`](https://sepolia.mantlescan.xyz/address/0x9fdF14c5B14173D74C08Af27AebFf39240dC105A) |
 
@@ -118,7 +114,7 @@ Honest framing, because this runs on a testnet:
 
 **Simulated on testnet:** perp **fills** are simulated at the live mark price (the agents hold no Hyperliquid L1 margin), and Demeter's USYC yield is modeled because the testnet Teller is access-gated. So PnL tracks real price movement on real on-chain capital, with no real fills or fees.
 
-> The original design bridged USDC Mantle → HyperEVM via **CCTP V2** every cycle. Under deadline pressure we swapped it for pre-funded HyperEVM wallets (chain 998) after CCTP testnet latency caused stuck round-trips. The Mantle-side vault accounting stayed real.
+> The original design bridged USDC to HyperEVM via **CCTP V2** every cycle. Under deadline pressure we swapped it for pre-funded HyperEVM wallets (chain 998) after CCTP testnet latency caused stuck round-trips. The Mantle-side vault accounting stayed real.
 
 ---
 
