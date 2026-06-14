@@ -15,7 +15,7 @@ const SECTIONS = [
   },
   {
     id: "vault", n: "03", title: "The vault",
-    body: "A smart contract on Mantle holds the pool's USDC. When the allocator funds an agent, the vault transfers that USDC to the agent's wallet to trade. When the trade is done, the vault pulls the original stake back plus or minus the result. The vault is the single source of truth for who holds what.",
+    body: "A smart contract on Mantle Sepolia holds the pool's USDC. When the allocator funds an agent, the vault transfers that USDC to the agent's wallet to trade. When the trade is done, the vault pulls the original stake back plus or minus the result. The vault is the single source of truth for who holds what.",
   },
   {
     id: "loss-cap", n: "04", title: "The daily loss cap",

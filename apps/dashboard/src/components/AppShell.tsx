@@ -45,7 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="mt-3 flex items-center justify-between border-t-2 border-ink pt-1.5">
           <p className="font-serif text-sm italic text-ink-2">A ledger of autonomous judgment, settled on-chain.</p>
-          <p className="label">{today || "Testnet Edition"} · Mantle</p>
+          <p className="label">{today || "Testnet Edition"} · Mantle Sepolia</p>
         </div>
 
         {/* Section navigation */}

@@ -8,8 +8,15 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying from:", deployer.address);
 
-  const usdcAddress = process.env.USDC_ADDRESS;
-  if (!usdcAddress) throw new Error("USDC_ADDRESS not set in .env");
+  let usdcAddress = process.env.USDC_ADDRESS;
+  if (!usdcAddress || /^0x0+$/i.test(usdcAddress)) {
+    // No canonical USDC on Mantle Sepolia — deploy a 6-decimal mock.
+    const Mock = await ethers.getContractFactory("ERC20Mock");
+    const mock = await Mock.deploy("USD Coin", "USDC", 6);
+    await mock.waitForDeployment();
+    usdcAddress = await mock.getAddress();
+    console.log("Mock USDC:", usdcAddress);
+  }
 
   // 1. Deploy PantheonVault
   const Vault = await ethers.getContractFactory("PantheonVault");
@@ -45,6 +52,7 @@ async function main() {
 
   // 5. Print .env additions
   console.log("\nAdd these to your .env:");
+  console.log(`USDC_ADDRESS=${usdcAddress}`);
   console.log(`VAULT_ADDRESS=${await vault.getAddress()}`);
   console.log(`REGISTRY_ADDRESS=${await registry.getAddress()}`);
   console.log(`ANCHOR_ADDRESS=${await anchor.getAddress()}`);

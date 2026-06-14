@@ -25,7 +25,7 @@ app.post("/proposals", (req, res) => {
     return res.status(400).json({ error: "invalid proposal" });
   }
   const VALID_ACTIONS = ["long", "short", "rotate", "hold"];
-  const VALID_VENUES  = ["hyperliquid", "Mantle-dex", "usyc", "aave"];
+  const VALID_VENUES  = ["hyperliquid", "mantle-dex", "usyc", "aave"];
   if (!VALID_ACTIONS.includes(p.action)) {
     return res.status(400).json({ error: `invalid action: ${p.action}` });
   }

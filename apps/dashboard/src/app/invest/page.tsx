@@ -44,7 +44,7 @@ export default function InvestPage() {
             </div>
           ))}
           <p className="border-t border-ink/15 pt-4 text-xs italic text-ink-3">
-            Need testnet USDC first? Connect your wallet, then use the faucet link in the steps above. Funds arrive on Mantle, where USDC is also the gas token.
+            Need testnet USDC first? Connect your wallet, then use the faucet link in the steps above. Funds arrive on Mantle Sepolia — you'll also need a little MNT for gas (grab it from the Mantle faucet).
           </p>
         </div>
 

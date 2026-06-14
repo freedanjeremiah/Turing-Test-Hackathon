@@ -13,7 +13,7 @@ const ADDRESS_TO_ID: Record<string, string> = {
 
 // Mantle Sepolia testnet limits eth_getLogs to a 10,000 block range — paginate in chunks.
 const BACKFILL_CHUNK = 9000;
-// Mantle drops eth_newFilter subscriptions ("filter not found"), so contract.on()
+// Mantle Sepolia may drop eth_newFilter subscriptions ("filter not found"), so contract.on()
 // never delivers live events. We poll forward with getLogs instead.
 const POLL_MS = Number(process.env.INDEXER_POLL_MS ?? 12_000);
 
@@ -110,5 +110,5 @@ export function startPolling(): void {
 
   void tick();
   setInterval(() => void tick(), POLL_MS);
-  console.log(`[indexer] polling Mantle events via getLogs every ${POLL_MS}ms`);
+  console.log(`[indexer] polling Mantle Sepolia events via getLogs every ${POLL_MS}ms`);
 }

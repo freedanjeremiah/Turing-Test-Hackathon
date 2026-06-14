@@ -4,7 +4,7 @@ export type AgentProposal = {
   agentId: AgentId;
   tradeIdea: string;
   action: "long" | "short" | "rotate" | "hold";
-  venue: "hyperliquid" | "Mantle-dex" | "usyc" | "aave";
+  venue: "hyperliquid" | "mantle-dex" | "usyc" | "aave";
   requestedSizeUsd: number;
   confidence: number;
   reasoningTraceCid: string;

@@ -2,11 +2,11 @@
  * Demeter venue execution: deposit USDC into USYC (or Aave) and later redeem
  * to compute realized yield delta.
  *
- * USYC Teller is a real ERC-4626-style vault on Mantle:
+ * USYC Teller is a real ERC-4626-style vault on Mantle Sepolia:
  *   deposit(assets, receiver) → shares
  *   redeem(shares, receiver, owner) → assets
  *
- * Aave on Mantle is not yet deployed — supply() works when AAVE_POOL_ADDRESS is set.
+ * Aave on Mantle Sepolia is not yet deployed — supply() works when AAVE_POOL_ADDRESS is set.
  */
 import { ethers } from "ethers";
 import { AgentProposal } from "@pantheon/shared";

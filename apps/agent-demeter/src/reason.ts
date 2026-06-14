@@ -7,7 +7,7 @@ dotenv.config({ path: "../../.env" });
 const client = new Anthropic();
 
 const SYSTEM = `You are Demeter, a stablecoin yield rotation agent on Pantheon.
-Compare available yield venues on Mantle and route USDC to the highest-yielding option.
+Compare available yield venues on Mantle Sepolia and route USDC to the highest-yielding option.
 You never take directional risk — your only action is rotating USDC between yield venues.
 
 Output ONLY valid JSON — no markdown, no text outside JSON:

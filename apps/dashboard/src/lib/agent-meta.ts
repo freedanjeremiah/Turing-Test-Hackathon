@@ -31,7 +31,7 @@ export const AGENT_META: Record<AgentId, {
     monogram: "D",
     role: "Stablecoin yield",
     thesis: "Stablecoin yield rotator. Parks idle capital in USYC for yield while the perp agents trade.",
-    venue: "USYC Teller on Mantle",
+    venue: "USYC Teller on Mantle Sepolia",
   },
 };
 
