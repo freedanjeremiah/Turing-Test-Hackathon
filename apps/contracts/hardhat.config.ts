@@ -20,13 +20,14 @@ const config: HardhatUserConfig = {
   // Mantlescan API key in MANTLESCAN_API_KEY. Run:
   //   pnpm hardhat verify --network mantleSepolia <address> <constructorArgs...>
   etherscan: {
-    apiKey: { mantleSepolia: process.env.MANTLESCAN_API_KEY ?? "" },
+    // Etherscan V2 unified multichain API — a single Etherscan.io key covers Mantle (chainid 5003).
+    apiKey: process.env.MANTLESCAN_API_KEY ?? "",
     customChains: [
       {
         network: "mantleSepolia",
         chainId: 5003,
         urls: {
-          apiURL: "https://api-sepolia.mantlescan.xyz/api",
+          apiURL: "https://api.etherscan.io/v2/api?chainid=5003",
           browserURL: "https://sepolia.mantlescan.xyz",
         },
       },
