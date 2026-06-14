@@ -1,16 +1,12 @@
 import { createConfig, http } from "wagmi";
 import { injected } from "wagmi/connectors";
+import { mantleSepoliaTestnet } from "viem/chains";
 
-export const arcTestnet = {
-  id: 5003,
-  name: "Mantle Sepolia",
-  nativeCurrency: { name: "MNT", symbol: "MNT", decimals: 18 },
-  rpcUrls: { default: { http: ["https://rpc.sepolia.mantle.xyz"] } },
-} as const;
+export const mantleSepolia = mantleSepoliaTestnet;
 
 export const wagmiConfig = createConfig({
-  chains: [arcTestnet],
+  chains: [mantleSepolia],
   connectors: [injected()],
-  transports: { [arcTestnet.id]: http("https://rpc.sepolia.mantle.xyz") },
+  transports: { [mantleSepolia.id]: http("https://rpc.sepolia.mantle.xyz") },
   ssr: true,
 });

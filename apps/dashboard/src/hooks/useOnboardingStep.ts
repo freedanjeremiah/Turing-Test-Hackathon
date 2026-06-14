@@ -10,7 +10,7 @@ const ERC20_ABI = [
     outputs: [{ type: "uint256" }] },
 ] as const;
 
-const USDC_ADDRESS = "0x3600000000000000000000000000000000000000" as const;
+const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
 const VAULT_ADDRESS = (process.env.NEXT_PUBLIC_VAULT_ADDRESS ?? "") as `0x${string}`;
 const MANTLE_SEPOLIA_CHAIN_ID = 5003;
 const MIN_USDC_USD = 10;  // step 2 considers wallet "funded" at $10+

@@ -8,7 +8,7 @@ const MANTLE_CHAIN_PARAMS = {
   chainName: "Mantle Sepolia",
   nativeCurrency: { name: "MNT", symbol: "MNT", decimals: 18 },
   rpcUrls: ["https://rpc.sepolia.mantle.xyz"],
-  blockExplorerUrls: [] as string[],
+  blockExplorerUrls: ["https://sepolia.mantlescan.xyz"],
 };
 const FAUCET_URL = process.env.NEXT_PUBLIC_FAUCET_URL ?? "https://faucet.sepolia.mantle.xyz";
 
