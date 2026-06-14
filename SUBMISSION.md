@@ -45,11 +45,11 @@ contracts deployed on Mantle**, and the agents transact against them every cycle
 
 | Contract | Address |
 |---|---|
-| PantheonVault | `0xE2c66EA9d756C689585Bc77f28E5007b319db364` |
-| PantheonRegistry | `0xAC74e30A629d37Af1238D5a7d1655769537B5913` |
-| TraceAnchor | `0xb382F2a51D604a9a88988051862e616Fb2513EB0` |
-| MantleYieldVault (ERC-4626) | `0x9aDa9F8381379799594A340F3E01A4139E3c9062` |
-| MantleOraclePerp | `0x82E92B8F167BAeBffCEe36b03025Ab4D726618e4` |
+| PantheonVault | `0x74C8F4ebd4839644688d7145D66e7755eEBCe96A` |
+| PantheonRegistry | `0x828B77A60e515b9815644C3Ac9252Fd065dC05b0` |
+| TraceAnchor | `0x542F5fDe7015A8D70cB6972e4909c0BEfb0858a8` |
+| MantleYieldVault (ERC-4626) | `0xfE562a8bd98ec6cB1f5342224404Ca5e8dd73dFb` |
+| MantleOraclePerp | `0xE6e5574CEc677632eE62D868bd0778f2A729dC89` |
 | Test USDC (ERC20) | `0x463099cdEA69AeBf85370a25A66288098C913c07` |
 | Pyth oracle (existing, live) | `0x98046Bd286715D3B0BC227Dd7a956b83D8978603` |
 
