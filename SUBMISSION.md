@@ -71,7 +71,7 @@ Gas on Mantle is **MNT** (not USDC), so every wallet needs test MNT.
 ## Deploy + run (operator steps — require a funded MNT key)
 
 1. Fund the deployer + 3 agent wallets with test MNT (faucet above).
-2. Set `.env` from `.env.example` (private keys, `MANTLE_RPC_URL`, agent addresses, `ANTHROPIC_API_KEY`).
+2. Set `.env` from `.env.example` (private keys, `MANTLE_RPC_URL`, agent addresses, `OPENAI_API_KEY`).
 3. Deploy (deploys test USDC + the two real venues, seeds them, writes addresses to `.env`):
    ```bash
    cd apps/contracts && pnpm hardhat run ../../scripts/deploy.ts --network mantleSepolia

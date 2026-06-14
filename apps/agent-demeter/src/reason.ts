@@ -1,10 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { AgentProposal } from "@pantheon/shared";
 import { YieldData } from "./data.js";
 import * as dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
-const client = new Anthropic();
+const client = new OpenAI();
+const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 const SYSTEM = `You are Demeter, a stablecoin yield rotation agent on Pantheon.
 Compare available yield venues on Mantle Sepolia and route USDC to the highest-yielding option.
@@ -27,29 +28,16 @@ Output ONLY valid JSON — no markdown, no text outside JSON:
 type RawProposal = AgentProposal & { reasoning: string };
 
 export async function reason(data: YieldData[]): Promise<RawProposal> {
-  const msg = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+  const res = await client.chat.completions.create({
+    model: MODEL,
     max_tokens: 512,
-    system: SYSTEM,
-    messages: [{ role: "user", content: `Available yields:\n${JSON.stringify(data, null, 2)}` }],
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: SYSTEM },
+      { role: "user", content: `Available yields:\n${JSON.stringify(data, null, 2)}` },
+    ],
   });
-  const strip = (s: string) => s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-  const text = strip(msg.content[0].type === "text" ? msg.content[0].text : "");
-  let parsed: RawProposal;
-  try {
-    parsed = JSON.parse(text) as RawProposal;
-  } catch {
-    const retry = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      messages: [
-        { role: "user", content: `Current market data:\n${JSON.stringify(data, null, 2)}\n\nProduce a trade proposal.` },
-        { role: "assistant", content: text },
-        { role: "user", content: "Your previous output was not valid JSON — output only valid JSON matching the schema, no other text." },
-      ],
-    });
-    const retryText = strip(retry.content[0].type === "text" ? retry.content[0].text : "");
-    parsed = JSON.parse(retryText) as RawProposal;
-  }
-  return parsed;
+
+  const text = res.choices[0]?.message?.content ?? "{}";
+  return JSON.parse(text) as RawProposal;
 }

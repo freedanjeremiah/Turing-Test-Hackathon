@@ -1,10 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { AgentProposal } from "@pantheon/shared";
 import { FundingEntry } from "./data.js";
 import * as dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
-const client = new Anthropic();
+const client = new OpenAI();
+const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 const SYSTEM = `You are Hermes, a funding-rate arbitrage trading agent on Pantheon.
 Find the perp market with the most extreme funding rate imbalance.
@@ -31,23 +32,16 @@ export async function reason(data: FundingEntry[]): Promise<RawProposal> {
     .sort((a, b) => Math.abs(b.fundingRate) - Math.abs(a.fundingRate))
     .slice(0, 5);
 
-  const call = (messages: Anthropic.MessageParam[]) =>
-    client.messages.create({ model: "claude-haiku-4-5-20251001", max_tokens: 1024, system: SYSTEM, messages });
-
-  const strip = (s: string) => s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-
-  const msg = await call([{ role: "user", content: `Top funding rates:\n${JSON.stringify(top5, null, 2)}` }]);
-  const text = strip(msg.content[0].type === "text" ? msg.content[0].text : "");
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    const retry = await call([
+  const res = await client.chat.completions.create({
+    model: MODEL,
+    max_tokens: 1024,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: SYSTEM },
       { role: "user", content: `Top funding rates:\n${JSON.stringify(top5, null, 2)}` },
-      { role: "assistant", content: text },
-      { role: "user", content: "Output was not valid JSON. Output ONLY the JSON object." },
-    ]);
-    const retryText = strip(retry.content[0].type === "text" ? retry.content[0].text : "");
-    return JSON.parse(retryText);
-  }
+    ],
+  });
+
+  const text = res.choices[0]?.message?.content ?? "{}";
+  return JSON.parse(text) as RawProposal;
 }

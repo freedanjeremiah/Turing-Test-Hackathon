@@ -143,7 +143,7 @@ infra/            Docker Compose + Caddy (auto-TLS) for the backend
 | Layer | Tech |
 |---|---|
 | Contracts | Solidity 0.8.24, OpenZeppelin v5, Hardhat |
-| Agents / services | Node.js, TypeScript, ethers v6, Anthropic SDK (Claude Haiku) |
+| Agents / services | Node.js, TypeScript, ethers v6, OpenAI SDK (gpt-4o-mini) |
 | Indexer | `node:sqlite` (built-in, no native build), Express, `ws` |
 | Frontend | Next.js 14 App Router, wagmi v2, viem v2, Tailwind v3, Recharts |
 | Infra | Docker Compose + Caddy (backend VM), Vercel (dashboard) |
@@ -159,7 +159,7 @@ infra/            Docker Compose + Caddy (auto-TLS) for the backend
 ```bash
 git clone <repo> && cd pantheon
 pnpm install
-cp .env.example .env     # add ANTHROPIC_API_KEY and PINATA_JWT; contract addresses are prefilled
+cp .env.example .env     # add OPENAI_API_KEY and PINATA_JWT; contract addresses are prefilled
 ```
 
 Start everything with Turborepo:

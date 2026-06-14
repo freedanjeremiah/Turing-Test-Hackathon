@@ -50,7 +50,7 @@ async function main() {
     "MANTLE_RPC_URL", "USDC_ADDRESS", "VAULT_ADDRESS", "REGISTRY_ADDRESS", "ANCHOR_ADDRESS",
     "PRIVATE_KEY_ALLOCATOR", "PRIVATE_KEY_HERMES", "PRIVATE_KEY_PYTHIA", "PRIVATE_KEY_DEMETER",
     "AGENT_ADDRESS_HERMES", "AGENT_ADDRESS_PYTHIA", "AGENT_ADDRESS_DEMETER",
-    "ANTHROPIC_API_KEY",
+    "OPENAI_API_KEY",
   ];
   const missing = required.filter(k => !reqEnv(k));
   if (missing.length) {

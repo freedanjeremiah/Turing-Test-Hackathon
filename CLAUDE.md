@@ -114,7 +114,7 @@ Redeploy to Mantle Sepolia is pending — run `scripts/deploy.ts --network mantl
 
 - **Solidity 0.8.24**, OpenZeppelin v5, custom errors, manual share math (not ERC-4626-inheriting).
 - **ethers v6** in all off-chain Node services. **wagmi v2 + viem v2** in dashboard. Don't mix.
-- **Anthropic SDK** with **Claude Haiku** for agent reasoning (`agent-*/src/reason.ts`). Keep prompts short — these run every 60s per agent.
+- **OpenAI SDK** (`gpt-4o-mini` by default, override via `OPENAI_MODEL`) for agent reasoning (`agent-*/src/reason.ts`), using `response_format: json_object` for guaranteed-parseable output. Needs `OPENAI_API_KEY`. Keep prompts short — these run every cycle per agent.
 - **CCTP V2** for Mantle → HyperEVM bridging. EIP-712 phantom-agent signing for HL orders (`hl.ts`).
 - **node:sqlite** in indexer (no `better-sqlite3`, no native build).
 - **Recharts** for sparklines. **CountUp** for TVL animation. **Tailwind v3** (don't upgrade to v4 — there was a recent build break with `@circle-libs/react-elements` that pulled in conflicting tailwind).
