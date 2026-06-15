@@ -13,16 +13,31 @@ const ADDRESS_TO_ID: Record<string, string> = {
 
 // Mantle Sepolia testnet limits eth_getLogs to a 10,000 block range — paginate in chunks.
 const BACKFILL_CHUNK = 9000;
+// How far back the initial backfill scans. Kept small so the public RPC isn't hammered
+// with dozens of rate-limited getLogs calls (which would abort the whole backfill and
+// leave the deposits table empty). Override with INDEXER_BACKFILL_BLOCKS.
+const BACKFILL_BLOCKS = Number(process.env.INDEXER_BACKFILL_BLOCKS ?? 30_000);
 // Mantle Sepolia may drop eth_newFilter subscriptions ("filter not found"), so contract.on()
 // never delivers live events. We poll forward with getLogs instead.
 const POLL_MS = Number(process.env.INDEXER_POLL_MS ?? 12_000);
+// Spacing between getLogs calls so the public RPC's rate limiter doesn't trip.
+const CALL_GAP_MS = Number(process.env.INDEXER_CALL_GAP_MS ?? 400);
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function queryChunked(vault: ethers.Contract, filter: ethers.ContractEventName, from: number, to: number): Promise<ethers.EventLog[]> {
   const results: ethers.EventLog[] = [];
   for (let start = from; start <= to; start += BACKFILL_CHUNK) {
     const end = Math.min(start + BACKFILL_CHUNK - 1, to);
-    const chunk = await vault.queryFilter(filter, start, end) as ethers.EventLog[];
-    if (chunk.length) results.push(...chunk);
+    // Tolerate a rate-limited/failed chunk: log and continue so one bad call doesn't
+    // abort the entire backfill (which previously stuck lastBlock at 0 forever).
+    try {
+      const chunk = await vault.queryFilter(filter, start, end) as ethers.EventLog[];
+      if (chunk.length) results.push(...chunk);
+    } catch (err) {
+      console.warn(`[indexer] getLogs ${start}-${end} failed (skip): ${(err as Error).message?.slice(0, 60)}`);
+    }
+    await sleep(CALL_GAP_MS);
   }
   return results;
 }
@@ -69,11 +84,10 @@ function ingest(
 }
 
 async function scan(vault: ethers.Contract, from: number, to: number, live: boolean) {
-  const [deposited, allocated, settled] = await Promise.all([
-    queryChunked(vault, vault.filters.Deposited(), from, to),
-    queryChunked(vault, vault.filters.Allocated(), from, to),
-    queryChunked(vault, vault.filters.Settled(), from, to),
-  ]);
+  // Sequential (not Promise.all) to avoid a 3x burst of getLogs that trips rate limits.
+  const deposited = await queryChunked(vault, vault.filters.Deposited(), from, to);
+  const allocated = await queryChunked(vault, vault.filters.Allocated(), from, to);
+  const settled = await queryChunked(vault, vault.filters.Settled(), from, to);
   return ingest(deposited, allocated, settled, live);
 }
 
@@ -90,9 +104,9 @@ export function startPolling(): void {
     try {
       const head = await provider.getBlockNumber();
       if (lastBlock === 0) {
-        // Initial backfill: 250k blocks of history, no broadcast.
-        const from = Math.max(0, head - 250_000);
-        console.log("[indexer] backfilling historical vault events...");
+        // Initial backfill: a bounded recent window, no broadcast.
+        const from = Math.max(0, head - BACKFILL_BLOCKS);
+        console.log(`[indexer] backfilling vault events (blocks ${from}-${head})...`);
         const { d, a, s } = await scan(vault, from, head, false);
         console.log(`[indexer] backfill done — ${d} deposits, ${a} allocations, ${s} settlements`);
       } else if (head > lastBlock) {
