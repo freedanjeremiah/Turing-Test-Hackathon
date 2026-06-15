@@ -32,7 +32,7 @@ async function main() {
     : undefined;
   const usdc = process.env.USDC_ADDRESS;
 
-  await verify(usdc, ["USD Coin", "USDC", 6], "ERC20Mock (USDC)");
+  await verify(usdc, ["USD Coin", "USDC", 6], "ERC20PermitMock (USDC)");
   await verify(process.env.VAULT_ADDRESS, [usdc, allocator], "PantheonVault");
   await verify(process.env.REGISTRY_ADDRESS, [allocator], "PantheonRegistry");
   await verify(process.env.ANCHOR_ADDRESS, [process.env.REGISTRY_ADDRESS], "TraceAnchor");

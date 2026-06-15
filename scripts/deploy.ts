@@ -32,7 +32,7 @@ async function main() {
 
   let usdc = process.env.USDC_ADDRESS;
   if (!usdc || /^0x0+$/i.test(usdc)) {
-    const Mock = await ethers.getContractFactory("ERC20Mock");
+    const Mock = await ethers.getContractFactory("ERC20PermitMock");
     const mock = await Mock.deploy("USD Coin", "USDC", 6);
     await mock.waitForDeployment();
     usdc = await mock.getAddress();
@@ -105,7 +105,7 @@ async function main() {
   //    Yield reserve: 5,000 USDC streamed at ~5.2% APY on a 100k base ≈ 0.000165 USDC/sec.
   //    Perp pool: 20,000 USDC to pay winning positions.
   try {
-    const usdcToken = await ethers.getContractAt("ERC20Mock", usdc);
+    const usdcToken = await ethers.getContractAt("ERC20PermitMock", usdc);
     const reserve = ethers.parseUnits("5000", 6);
     const pool = ethers.parseUnits("20000", 6);
     await (await usdcToken.mint(deployer.address, reserve + pool)).wait();

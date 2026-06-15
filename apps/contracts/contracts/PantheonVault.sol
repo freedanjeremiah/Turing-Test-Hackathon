@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract PantheonVault {
@@ -51,21 +52,39 @@ contract PantheonVault {
     }
 
     function deposit(uint256 amount) external notPaused {
+        _deposit(msg.sender, amount);
+    }
+
+    /// Single-transaction deposit using an EIP-2612 permit signature — no separate
+    /// `approve` transaction (so wallets don't show a standalone token-approval prompt).
+    function depositWithPermit(
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external notPaused {
+        // try/catch: a front-running permit or already-set allowance shouldn't brick the deposit.
+        try IERC20Permit(address(usdc)).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+        _deposit(msg.sender, amount);
+    }
+
+    function _deposit(address from, uint256 amount) internal {
         require(amount > 0, "zero amount");
-        require(depositedBy[msg.sender] + amount <= WALLET_CAP, "wallet cap exceeded");
+        require(depositedBy[from] + amount <= WALLET_CAP, "wallet cap exceeded");
         require(totalAssets + amount <= VAULT_CAP, "vault cap exceeded");
 
         uint256 shares = totalShares == 0
             ? amount
             : (amount * totalShares) / totalAssets;
 
-        depositedBy[msg.sender] += amount;
-        shareBalances[msg.sender] += shares;
+        depositedBy[from] += amount;
+        shareBalances[from] += shares;
         totalShares += shares;
         totalAssets += amount;
 
-        usdc.safeTransferFrom(msg.sender, address(this), amount);
-        emit Deposited(msg.sender, amount, shares);
+        usdc.safeTransferFrom(from, address(this), amount);
+        emit Deposited(from, amount, shares);
     }
 
     function withdraw(uint256 shares) external notPaused {
