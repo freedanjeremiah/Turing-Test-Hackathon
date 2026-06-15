@@ -93,11 +93,14 @@ scripts/          create-wallets, deploy, mint-usdc, approve-vault, preflight, e
 
 | Contract | Address |
 |---|---|
-| PantheonVault | redeploy pending |
-| PantheonRegistry | redeploy pending |
-| TraceAnchor | redeploy pending |
+| PantheonVault | `0x766B5739a28E47E942Fa2f378dAa60485D4deF2d` |
+| PantheonRegistry | `0xeF7b7b642C7d864caC4de7559c50339498728e64` |
+| TraceAnchor | `0xdf3Eb178b6551EfBdC7b55cd6DE783eC099275e8` |
+| MantleYieldVault | `0x89fcC094b966B3fc6dF162c6fa4185B13dc2582f` |
+| MantleOraclePerp | `0xfd4816400b0a12fbEdc759d15141FdC5e411361b` |
+| Test USDC | `0x12515C5AC8a0eAc0A35c7f2154c2e1954F4Af372` |
 
-Redeploy to Mantle Sepolia is pending — run `scripts/deploy.ts --network mantleSepolia` and paste addresses here.
+Agents (registered): hermes `0xb7484463aFa52fEbdEDA7175c70362e884beBc99` · pythia `0xAF34F92a0Ee45e64919FD226Eb09AA9c195ED33d` · demeter `0x76F948747134405d77759Dc0479dD5Ba599D25D8`.
 
 ## Common tasks
 

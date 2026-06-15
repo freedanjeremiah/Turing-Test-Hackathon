@@ -36,8 +36,6 @@ The point isn't "an AI that makes money." It's an agent-run fund you can **audit
 | Surface | URL |
 |---|---|
 | **Dashboard** | https://pantheon-mantle.vercel.app |
-| **Indexer API (REST)** | https://pantheon.philotheephilix.in/api |
-| **Indexer (WebSocket)** | wss://pantheon.philotheephilix.in/api |
 
 **Network:** Mantle Sepolia testnet · chain ID `5003` · RPC `https://rpc.sepolia.mantle.xyz` · explorer [sepolia.mantlescan.xyz](https://sepolia.mantlescan.xyz)
 Gas on Mantle Sepolia is paid in **MNT (18 dec)** — fund every wallet with test MNT from the [Mantle Sepolia faucet](https://faucet.sepolia.mantle.xyz). USDC is an ordinary 6-decimal ERC20 (deployed as a mock by `scripts/deploy.ts`).
@@ -46,23 +44,25 @@ Gas on Mantle Sepolia is paid in **MNT (18 dec)** — fund every wallet with tes
 
 ## Deployed contracts (Mantle Sepolia)
 
-**Redeploy to Mantle Sepolia pending** — run `pnpm hardhat run ../../scripts/deploy.ts --network mantleSepolia` and paste addresses here.
+All live on chain ID `5003` — verified on-chain.
 
-**Agent wallets**
-
-| Agent | Address | Explorer |
-|---|---|---|
-| Hermes | `0xD5B9468c9AB26e7BAcA0e20cF75efbD344Bb4e32` | [view ↗](https://sepolia.mantlescan.xyz/address/0xD5B9468c9AB26e7BAcA0e20cF75efbD344Bb4e32) |
-| Pythia | `0xC151883eB825453e267EB2D8638774e70Ecf2D76` | [view ↗](https://sepolia.mantlescan.xyz/address/0xC151883eB825453e267EB2D8638774e70Ecf2D76) |
-| Demeter | `0x2DDC1071Df0E9aFfAa92aBC4Ba70f66060d3cB85` | [view ↗](https://sepolia.mantlescan.xyz/address/0x2DDC1071Df0E9aFfAa92aBC4Ba70f66060d3cB85) |
-
-**Tokens / protocols on Mantle Sepolia testnet**
-
-| Asset | Address |
+| Contract | Address |
 |---|---|
-| USDC (6-decimal ERC20 mock) | _redeploy pending — set after `scripts/deploy.ts`_ |
-| USYC | [`0xe9185F0c5F296Ed1797AaE4238D26CCaBEadb86C`](https://sepolia.mantlescan.xyz/address/0xe9185F0c5F296Ed1797AaE4238D26CCaBEadb86C) |
-| USYC Teller | [`0x9fdF14c5B14173D74C08Af27AebFf39240dC105A`](https://sepolia.mantlescan.xyz/address/0x9fdF14c5B14173D74C08Af27AebFf39240dC105A) |
+| PantheonVault | [`0x766B5739a28E47E942Fa2f378dAa60485D4deF2d`](https://sepolia.mantlescan.xyz/address/0x766B5739a28E47E942Fa2f378dAa60485D4deF2d) |
+| PantheonRegistry | [`0xeF7b7b642C7d864caC4de7559c50339498728e64`](https://sepolia.mantlescan.xyz/address/0xeF7b7b642C7d864caC4de7559c50339498728e64) |
+| TraceAnchor | [`0xdf3Eb178b6551EfBdC7b55cd6DE783eC099275e8`](https://sepolia.mantlescan.xyz/address/0xdf3Eb178b6551EfBdC7b55cd6DE783eC099275e8) |
+| MantleYieldVault (ERC-4626) | [`0x89fcC094b966B3fc6dF162c6fa4185B13dc2582f`](https://sepolia.mantlescan.xyz/address/0x89fcC094b966B3fc6dF162c6fa4185B13dc2582f) |
+| MantleOraclePerp | [`0xfd4816400b0a12fbEdc759d15141FdC5e411361b`](https://sepolia.mantlescan.xyz/address/0xfd4816400b0a12fbEdc759d15141FdC5e411361b) |
+| Test USDC (6-decimal ERC20) | [`0x12515C5AC8a0eAc0A35c7f2154c2e1954F4Af372`](https://sepolia.mantlescan.xyz/address/0x12515C5AC8a0eAc0A35c7f2154c2e1954F4Af372) |
+| Pyth oracle (live on Sepolia) | [`0x98046Bd286715D3B0BC227Dd7a956b83D8978603`](https://sepolia.mantlescan.xyz/address/0x98046Bd286715D3B0BC227Dd7a956b83D8978603) |
+
+**Agent wallets** (registered in PantheonRegistry)
+
+| Agent | Address |
+|---|---|
+| Hermes | [`0xb7484463aFa52fEbdEDA7175c70362e884beBc99`](https://sepolia.mantlescan.xyz/address/0xb7484463aFa52fEbdEDA7175c70362e884beBc99) |
+| Pythia | [`0xAF34F92a0Ee45e64919FD226Eb09AA9c195ED33d`](https://sepolia.mantlescan.xyz/address/0xAF34F92a0Ee45e64919FD226Eb09AA9c195ED33d) |
+| Demeter | [`0x76F948747134405d77759Dc0479dD5Ba599D25D8`](https://sepolia.mantlescan.xyz/address/0x76F948747134405d77759Dc0479dD5Ba599D25D8) |
 
 ---
 
