@@ -2,13 +2,11 @@
 import { useEffect, useState } from "react";
 import {
   useAccount,
-  useChainId,
   useReadContract,
-  useSignTypedData,
   useWriteContract,
 } from "wagmi";
-import { waitForTransactionReceipt, readContract } from "wagmi/actions";
-import { parseUnits, formatUnits, parseSignature } from "viem";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import { parseUnits, formatUnits } from "viem";
 import { Loader2, ShieldAlert } from "lucide-react";
 import PantheonVaultABIRaw from "@pantheon/shared/abis/PantheonVault.json";
 import { wagmiConfig } from "../lib/wagmi";
@@ -23,13 +21,10 @@ const ERC20_ABI = [
   { name: "balanceOf", type: "function", stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
     outputs: [{ type: "uint256" }] },
-  { name: "nonces", type: "function", stateMutability: "view",
-    inputs: [{ name: "owner", type: "address" }],
-    outputs: [{ type: "uint256" }] },
+  { name: "transferAndCall", type: "function", stateMutability: "nonpayable",
+    inputs: [{ name: "to", type: "address" }, { name: "value", type: "uint256" }],
+    outputs: [{ type: "bool" }] },
 ] as const;
-
-// EIP-2612 permit domain for the test USDC (ERC20PermitMock, name "USD Coin", version "1").
-const USDC_PERMIT_NAME = "USD Coin";
 
 const VAULT_READ_ABI = [
   { name: "shareBalances", type: "function", stateMutability: "view",
@@ -128,12 +123,10 @@ export function DepositPanel({
   const withdrawableUsdc = Number(shareBalance) * Number(sharePriceBig) / 1e12;
 
   const { writeContractAsync } = useWriteContract();
-  const { signTypedDataAsync } = useSignTypedData();
-  const chainId = useChainId();
 
-  // Deposit via EIP-2612 permit: the user signs an off-chain permit (no token-approval
-  // transaction, so MetaMask shows a clean signature + a single deposit tx instead of a
-  // flagged "approval" prompt), then depositWithPermit pulls the USDC in one tx.
+  // Deposit via ERC-1363 transferAndCall: a single plain token-transfer transaction that
+  // the vault credits in its onTransferReceived hook. No approve, no permit signature —
+  // MetaMask shows an ordinary token send, not a flagged approval prompt.
   async function handleDeposit() {
     if (!amount || !address) return;
     let amountUsdc6: bigint;
@@ -146,39 +139,13 @@ export function DepositPanel({
     if (amountUsdc6 <= 0n) { setError("Amount must be greater than 0"); return; }
 
     setError(null);
-    setStep("approving");
+    setStep("depositing");
     try {
-      const nonce = (await readContract(wagmiConfig, {
+      await writeContractAsync({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
-        functionName: "nonces",
-        args: [address],
-      })) as bigint;
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
-
-      const signature = await signTypedDataAsync({
-        domain: { name: USDC_PERMIT_NAME, version: "1", chainId, verifyingContract: USDC_ADDRESS },
-        types: {
-          Permit: [
-            { name: "owner", type: "address" },
-            { name: "spender", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "nonce", type: "uint256" },
-            { name: "deadline", type: "uint256" },
-          ],
-        },
-        primaryType: "Permit",
-        message: { owner: address, spender: VAULT_ADDRESS, value: amountUsdc6, nonce, deadline },
-      });
-      const parsed = parseSignature(signature);
-      const v = parsed.v !== undefined ? Number(parsed.v) : parsed.yParity + 27;
-
-      setStep("depositing");
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: PantheonVaultABI,
-        functionName: "depositWithPermit",
-        args: [amountUsdc6, deadline, v, parsed.r, parsed.s],
+        functionName: "transferAndCall",
+        args: [VAULT_ADDRESS, amountUsdc6],
       });
       setAmount("");
     } catch (e: unknown) {

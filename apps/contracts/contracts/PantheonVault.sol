@@ -69,7 +69,23 @@ contract PantheonVault {
         _deposit(msg.sender, amount);
     }
 
+    /// ERC-1363 hook: USDC was transferred to the vault via transferAndCall — credit `from`.
+    /// This makes a deposit a single plain token-transfer transaction (no approve, no permit).
+    function onTransferReceived(address, address from, uint256 value, bytes calldata)
+        external notPaused returns (bytes4)
+    {
+        require(msg.sender == address(usdc), "only usdc");
+        _creditShares(from, value); // tokens already in the vault
+        return this.onTransferReceived.selector;
+    }
+
     function _deposit(address from, uint256 amount) internal {
+        usdc.safeTransferFrom(from, address(this), amount); // pull, then credit
+        _creditShares(from, amount);
+    }
+
+    /// Share accounting only — assumes `amount` USDC is already held by the vault.
+    function _creditShares(address from, uint256 amount) internal {
         require(amount > 0, "zero amount");
         require(depositedBy[from] + amount <= WALLET_CAP, "wallet cap exceeded");
         require(totalAssets + amount <= VAULT_CAP, "vault cap exceeded");
@@ -83,7 +99,6 @@ contract PantheonVault {
         totalShares += shares;
         totalAssets += amount;
 
-        usdc.safeTransferFrom(from, address(this), amount);
         emit Deposited(from, amount, shares);
     }
 
